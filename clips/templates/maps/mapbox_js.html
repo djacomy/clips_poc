@@ -89,7 +89,10 @@
                 var coords = a.geometry.coordinates
                 var title = a.properties.title;
                 var marker = L.marker(new L.LatLng(coords[1], coords[0]), {
-                    icon: L.mapbox.marker.icon({'marker-symbol': 'post', 'marker-color': '0044FF'}),
+                    icon: L.mapbox.marker.icon({'marker-symbol': a.properties.marker_symbol,
+                                                'marker-color': a.properties.marker_color,
+                                                'icon': a.properties.icon
+                                                }),
                     title: title
                 });
                 marker.bindPopup(title);

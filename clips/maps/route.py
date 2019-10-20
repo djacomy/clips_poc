@@ -76,8 +76,8 @@ def create_markers(df):
         properties = {
             'title': _format_title(row),
             'icon': 'campsite',
-            'marker-color': '#3bb2d0',
-            'marker-symbol': len(stop_locations) + 1
+            'marker_color':  "#F4D03F" if row.get("energy") == "P" else "#AED6F1",
+            'marker_symbol': 'post'
         }
         feature = Feature(geometry=point, properties=properties)
         stop_locations.append(feature)
