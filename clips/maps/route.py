@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
 from geojson import Feature, Point
 import pandas as pd
 
@@ -8,6 +8,19 @@ from ..database import engine
 map_blueprint = Blueprint('map', __name__,  static_folder='../static')
 
 # Landing Page
+
+CITIES_ONBOARD = {
+    "mureaux_78":  {
+        'lon': 1.9010455,
+        'lat': 48.9929395,
+        "libelle": "Mureaux (78)"
+    },
+    "vernon_78": {
+        'lon': 1.481796,
+        'lat': 49.086053,
+        "libelle": "Vernon (78)"
+    }
+}
 
 
 def df_to_geojson(df, properties, lat='lat', lon='lon'):
@@ -22,6 +35,7 @@ def df_to_geojson(df, properties, lat='lat', lon='lon'):
             feature['properties'][prop] = row.get(prop) or 'null'
         geojson['features'].append(feature)
     return geojson
+
 
 def _format_title(row):
     field_map = {"P": {"name": "Adress",
@@ -76,8 +90,18 @@ def create_markers(df):
     return stop_locations
 
 
-@map_blueprint.route('/', methods=['GET'])
+@map_blueprint.route('/', methods=['GET', 'POST'])
 def mapbox_js():
+
+    if request.method == 'POST':
+        # get the poll and save it in the database
+        city = request.form.get("city", "vernon_78")
+    else:
+        city = "vernon_78"
+
+    center_point = CITIES_ONBOARD.get(city)
+    print(city, center_point)
+
     gdf = pd.read_sql("""SELECT lon, lat, name, energy, house_type, logement_count,
                          p_panel_count, w_panel_count, north_azimut, roof_shape,
                          sunchine, validation, comment 
@@ -89,7 +113,11 @@ def mapbox_js():
     return render_template(
         'maps/mapbox_js.html',
         ACCESS_KEY=MAPBOX_ACCESS_KEY,
-        coords=[ gdf["lat"].median(), gdf["lon"].median()],
+        coords=[center_point["lat"], center_point["lon"]],
         route_data=route_data,
-        markers=markers
+        markers=markers,
+        city=city,
+        cities=CITIES_ONBOARD,
+        zoom=11
+
     )

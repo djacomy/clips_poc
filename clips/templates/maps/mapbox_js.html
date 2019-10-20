@@ -12,17 +12,31 @@
         <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
         <style>
         body { margin:0; padding:0; }
-        #map-container {
-                margin: 100px 50px 50px 50px;
+        #container {
+                margin: 20px 20px 20px 20px;
                 position: relative;
-                height: 400px;
-                width: 600px;
+                height: 100%;
+                width: 100%;
+        }
+        #map-form {
+                position: relative;
+                top: 50px;
+                right: -800px;
+
+        }
+        #map-container {
+                position: relative;
+                margin: inherit;
+                height: inherit;
+                width: 55%;
         }
         #map {
                 position: relative;
                 margin: inherit;
                 height: inherit;
                 width: inherit;
+                height: 400px;
+                width: 100%;
         }
         .marker {
               border: none;
@@ -37,16 +51,33 @@
 {% endblock %}
 
 {% block content %}
+        <div id="container">
+             <div id="map-form">
+                <form class="form-inline" id="citiesForm"  method="POST" action="/" role="form">
+                    <select name="city" class="form-control" id="city">
+                             {% for key, value in cities.items() %}
+                                {% if key == city %}
+                                 <option selected value="{{key}}">{{value.libelle}}</option>
+                                {% else %}
+                               <option value="{{key}}">{{value.libelle}}</option>
+                               {% endif %}
+                           {% endfor %}
+                    </select>
+                  <button type="submit" class="btn btn-warning btn-lg">Choose community</button>
+                </form>
+                </div>
         <div id="map-container">
             <div id="map"></div>
         </div>
+        </div>
+
 {% endblock %}
 
 {% block js %}
         <script>
             L.mapbox.accessToken = '{{ACCESS_KEY}}';
             var map = L.mapbox.map('map')
-            .setView({{coords}}, 9)
+            .setView({{coords}}, {{zoom}})
             .addLayer(L.mapbox.styleLayer('mapbox://styles/mapbox/streets-v11'));
 
             var markers = new L.MarkerClusterGroup();
