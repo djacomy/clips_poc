@@ -4,6 +4,8 @@ import re,json,io
 import json, os
 import geopandas as gpd
 from bs4 import BeautifulSoup as bsp
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 import shapely.wkb
 
@@ -115,21 +117,12 @@ def get_maps_df(result):
     return pd.concat(res)
 
 
-def write_database(filepath="CLIPS_Vernon.geojson"):
-    gdf = gpd.read_file(os.path.join(data_dir, filepath))
+def write_database(filename="CLIPS_Vernon.geojson"):
+    gdf = gpd.read_file(os.path.join(data_dir, filename))
     gdf.drop("_umap_options", inplace=True, axis=1)
 
     # read shapefile into GeoDataFrame
     print('reading shapefile')
-
-    # make sure that the database does not exist yet, otherwise it will be opened instead of overwritten which will
-    # cause errors in this example
-    if os.path.exists('TestDB.sqlite'):
-        os.remove('TestDB.sqlite')
-
-    # create spatialite metadata
-    print('creating spatial metadata...')
-    engine.execute("SELECT InitSpatialMetaData(1);")
 
     # convert all values from the geopandas geometry column into their well-known-binary representations
     gdf['geometry'] = gdf.apply(lambda x: shapely.wkb.dumps(x.geometry), axis=1)
@@ -139,25 +132,48 @@ def write_database(filepath="CLIPS_Vernon.geojson"):
     print('writing into database...')
     gdf.to_sql('AddressPoints', engine, if_exists='replace', index=False)
 
-    # add a Spatialite geometry column called 'geom' to the table, using ESPG 4326, data type POINT and 2 dimensions
-    # (x, y)
-    engine.execute("SELECT AddGeometryColumn('AddressPoints', 'geom', 4326, 'POINT', 2);")
+    try:
+        # add a Spatialite geometry column called 'geom' to the table, using ESPG 4326, data type POINT and 2 dimensions
+        # (x, y)
+        engine.execute("SELECT AddGeometryColumn('AddressPoints', 'geom', 4326, 'POINT', 2);")
+    except SQLAlchemyError as e:
+        # Only at the table creation.
+        pass
 
     # update the yet empty geom column by parsing the well-known-binary objects from the geometry column into
     # Spatialite geometry objects
     engine.execute("UPDATE AddressPoints SET geom=GeomFromWKB(geometry, 4326);")
 
+    connection = engine.connect()
+    with connection.begin() as trans:
+        _update_data()
+        trans.commit()
+
+
+def _update_data():
+    print('Update markers...')
+    query = engine.execute("""SELECT name, energy, house_type, logement_count,
+                           p_panel_count, w_panel_count, north_azimut, roof_shape,
+                           sunchine, validation, comment , X(geom) as lon, Y(geom) as lat 
+                           FROM AddressPoints;""")
+
+    tmp = [{column: value for column, value in rowproxy.items()} for rowproxy in query]
+    for row in tmp:
+        q = engine.execute(f"""SELECT marker_id FROM markers WHERE lon={row["lon"]} and lat={row["lat"]}""").fetchone()
+        if q:
+            continue
+
+        engine.execute(text("""INSERT INTO markers (lon, lat, name, energy, house_type, logement_count,
+                           p_panel_count, w_panel_count, north_azimut, roof_shape,  sunchine) 
+            VALUES(:lon, :lat, :name, :energy, :house_type, :logement_count,
+            :p_panel_count, :w_panel_count, :north_azimut, :roof_shape,  :sunchine)"""), **row)
+
+    return tmp
+
+
+
 
 def read_database():
-    # create database engine and open existing sqlite database
-    engine = create_engine(SQLALCHEMY_DATABASE_URI, module=sqlite)
-
-    # load spatialite extension for sqlite. make sure that mod_spatialite.dll is located in a folder that is in your
-    # system path
-    @event.listens_for(engine, 'connect')
-    def connect(dbapi_connection, connection_rec):
-        dbapi_connection.enable_load_extension(True)
-        dbapi_connection.execute('SELECT load_extension("mod_spatialite")')
 
     # select X and Y coordinates from the POINT geometries in the database table
     x = engine.execute("SELECT X(geom) FROM AddressPoints;")

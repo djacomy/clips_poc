@@ -78,10 +78,10 @@ def create_markers(df):
 
 @map_blueprint.route('/', methods=['GET'])
 def mapbox_js():
-    gdf = pd.read_sql("""SELECT name, energy, house_type, logement_count,
+    gdf = pd.read_sql("""SELECT lon, lat, name, energy, house_type, logement_count,
                          p_panel_count, w_panel_count, north_azimut, roof_shape,
-                         sunchine, validation, comment ,X(geom) as lon, Y(geom) as lat 
-                         FROM AddressPoints;""", engine)
+                         sunchine, validation, comment 
+                         FROM markers;""", engine)
 
     route_data = df_to_geojson(gdf, ['name', 'energy', 'house_type', 'logement_count'])
     markers = create_markers(gdf)
