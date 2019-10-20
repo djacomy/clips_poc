@@ -15,6 +15,7 @@ if __name__ == "__main__":
 
     import_cmd = subparsers.add_parser("import-marker", description=f'Import markers from geojson.')
     import_cmd.add_argument("filename", action="store")
+    import_cmd.add_argument("libelle", action="store")
     import_cmd.set_defaults(func=import_markers)
 
     mig_cmd = subparsers.add_parser("migrate", description=f'Migration command.')

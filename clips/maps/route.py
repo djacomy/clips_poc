@@ -9,18 +9,12 @@ map_blueprint = Blueprint('map', __name__,  static_folder='../static')
 
 # Landing Page
 
-CITIES_ONBOARD = {
-    "mureaux_78":  {
-        'lon': 1.9010455,
-        'lat': 48.9929395,
-        "libelle": "Mureaux (78)"
-    },
-    "vernon_78": {
-        'lon': 1.481796,
-        'lat': 49.086053,
-        "libelle": "Vernon (78)"
-    }
-}
+
+def get_project_cities():
+    return {row[0]: {'lon': row[1],
+                     'lat': row[2],
+                     "libelle": row[3]}
+            for row in engine.execute("SELECT code, lon, lat, libelle  FROM map")}
 
 
 def df_to_geojson(df, properties, lat='lat', lon='lon'):
@@ -95,12 +89,12 @@ def mapbox_js():
 
     if request.method == 'POST':
         # get the poll and save it in the database
-        city = request.form.get("city", "vernon_78")
+        city = request.form.get("city", "CLIPS_Vernon")
     else:
-        city = "vernon_78"
+        city = "CLIPS_Vernon"
 
-    center_point = CITIES_ONBOARD.get(city)
-    print(city, center_point)
+    pcities = get_project_cities()
+    center_point = pcities.get(city)
 
     gdf = pd.read_sql("""SELECT lon, lat, name, energy, house_type, logement_count,
                          p_panel_count, w_panel_count, north_azimut, roof_shape,
@@ -117,7 +111,7 @@ def mapbox_js():
         route_data=route_data,
         markers=markers,
         city=city,
-        cities=CITIES_ONBOARD,
+        cities=pcities,
         zoom=11
 
     )

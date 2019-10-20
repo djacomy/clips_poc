@@ -117,13 +117,14 @@ def get_maps_df(result):
     return pd.concat(res)
 
 
-def write_database(filename="CLIPS_Vernon.geojson"):
+def write_database(filename="CLIPS_Vernon.geojson", libelle="Vernon (79)"):
     gdf = gpd.read_file(os.path.join(data_dir, filename))
     gdf.drop("_umap_options", inplace=True, axis=1)
 
+    gdf['lon'] = gdf.geometry.apply(lambda p: p.x)
+    gdf['lat'] = gdf.geometry.apply(lambda p: p.y)
     # read shapefile into GeoDataFrame
     print('reading shapefile')
-
     # convert all values from the geopandas geometry column into their well-known-binary representations
     gdf['geometry'] = gdf.apply(lambda x: shapely.wkb.dumps(x.geometry), axis=1)
 
@@ -144,13 +145,24 @@ def write_database(filename="CLIPS_Vernon.geojson"):
     # Spatialite geometry objects
     engine.execute("UPDATE AddressPoints SET geom=GeomFromWKB(geometry, 4326);")
 
+
     connection = engine.connect()
     with connection.begin() as trans:
-        _update_data()
+        _update_data(filename.split(".")[0], libelle, gdf.lon.median(), gdf.lat.median())
         trans.commit()
 
 
-def _update_data():
+def _update_data(code, libelle, lon, lat):
+    print('Update map...')
+    q = engine.execute("SELECT map_id  FROM map WHERE code=:code;", code=code).fetchone()
+    if not q:
+        res = engine.execute(text("""INSERT INTO map (code, libelle, lon, lat) 
+                  VALUES(:code, :libelle, :lon, :lat)"""),
+                         code=code, libelle=libelle, lon=lon, lat=lat)
+        map_id = res.lastrowid
+    else:
+        map_id = q[0]
+
     print('Update markers...')
     query = engine.execute("""SELECT name, energy, house_type, logement_count,
                            p_panel_count, w_panel_count, north_azimut, roof_shape,
@@ -159,14 +171,23 @@ def _update_data():
 
     tmp = [{column: value for column, value in rowproxy.items()} for rowproxy in query]
     for row in tmp:
-        q = engine.execute(f"""SELECT marker_id FROM markers WHERE lon={row["lon"]} and lat={row["lat"]}""").fetchone()
+        q = engine.execute(f"""SELECT m.marker_id, l.map_id FROM markers m
+                                LEFT JOIN map_marker_link l ON l.marker_id = m.marker_id
+                               WHERE m.lon={row["lon"]} and m.lat={row["lat"]}""").fetchone()
         if q:
+            if not q[1]:
+                engine.execute(text("""INSERT INTO map_marker_link  (marker_id, map_id) 
+                            VALUES(:marker_id, :map_id)"""), marker_id=q[0], map_id=map_id)
+
             continue
 
-        engine.execute(text("""INSERT INTO markers (lon, lat, name, energy, house_type, logement_count,
+        res = engine.execute(text("""INSERT INTO markers (lon, lat, name, energy, house_type, logement_count,
                            p_panel_count, w_panel_count, north_azimut, roof_shape,  sunchine) 
             VALUES(:lon, :lat, :name, :energy, :house_type, :logement_count,
             :p_panel_count, :w_panel_count, :north_azimut, :roof_shape,  :sunchine)"""), **row)
+
+        engine.execute(text("""INSERT INTO map_marker_link  (marker_id, map_id) 
+                                  VALUES(:marker_id, :map_id)"""), marker_id=res.lastrowid, map_id=map_id)
 
     return tmp
 

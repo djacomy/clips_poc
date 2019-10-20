@@ -1,4 +1,5 @@
 import os
+from sqlalchemy import text
 from .collect import get_maps, get_maps_df, write_database
 from .database import engine
 from .settings import PROJECT_ROOT
@@ -10,14 +11,14 @@ def crawl():
     get_maps_df(result)
 
 
-def import_markers(filename):
+def import_markers(filename, libelle):
     if not filename.endswith(".geojson"):
         raise ValueError("Bad Format")
 
     if not os.path.exists(os.path.join("data", filename)):
         raise ValueError(f"{filename} not exit -> please crawl!")
 
-    write_database(filename)
+    write_database(filename, libelle)
 
 
 def init_db():
@@ -38,11 +39,31 @@ def migration(filename):
         raise Exception("Unknown script")
 
     with open(file_path, "r") as fp:
-        sql_cmd = fp.read()
+        sql_file = fp.read()
 
     connection = engine.connect()
 
     with connection.begin() as trans:
-        connection.execute("BEGIN TRANSACTION;")
-        connection.execute(sql_cmd)
+        connection.execute(text("BEGIN TRANSACTION;"))
+        sql_command = ''
+        for line in sql_file:
+            # Ignore commented lines
+            if line.startswith('--') or not line.strip('\n'):
+                continue
+            # Append line to the command string
+            sql_command += line.strip('\n')
+
+            # If the command string ends with ';', it is a full statement
+            if sql_command.endswith(';'):
+                # Try to execute statement and commit it
+                try:
+                    connection.execute(text(sql_command))
+
+                # Assert in case of error
+                except:
+                    print('Ops')
+
+                # Finally, clear command string
+                finally:
+                    sql_command = ''
         trans.commit()

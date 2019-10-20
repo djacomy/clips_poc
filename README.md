@@ -106,7 +106,7 @@ python manage.py crawl
 ### Import markers
 
 ```
-python manage.py import-marker CLIPS_Vernon.geojson 
+python manage.py import-marker CLIPS_Vernon.geojson "Vernon (78)"
 
 ```
 
