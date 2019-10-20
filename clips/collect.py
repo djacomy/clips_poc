@@ -12,6 +12,7 @@ from sqlalchemy import create_engine, event
 from sqlite3 import dbapi2 as sqlite
 
 from .settings import SQLALCHEMY_DATABASE_URI
+from .database import engine
 
 base_url = "https://umap.openstreetmap.fr/fr/"
 umap_url = "{}/search/".format(base_url)
@@ -125,16 +126,6 @@ def write_database(filepath="CLIPS_Vernon.geojson"):
     # cause errors in this example
     if os.path.exists('TestDB.sqlite'):
         os.remove('TestDB.sqlite')
-
-    # create database engine and create sqlite database
-    engine = create_engine(SQLALCHEMY_DATABASE_URI, module=sqlite)
-
-    # load spatialite extension for sqlite. make sure that mod_spatialite.dll is located in a folder that is in your
-    # system path
-    @event.listens_for(engine, 'connect')
-    def connect(dbapi_connection, connection_rec):
-        dbapi_connection.enable_load_extension(True)
-        dbapi_connection.execute('SELECT load_extension("mod_spatialite")')
 
     # create spatialite metadata
     print('creating spatial metadata...')

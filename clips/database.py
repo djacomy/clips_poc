@@ -1,13 +1,8 @@
-from flask import current_app as app
-
-
 from sqlalchemy import create_engine, event
 from sqlite3 import dbapi2 as sqlite
 
-from .settings import SQLALCHEMY_DATABASE_URI
+from .settings import SQLALCHEMY_DATABASE_URI, MAPBOX_ACCESS_KEY
 
-
-MAPBOX_ACCESS_KEY = app.config['MAPBOX_ACCESS_KEY']
 
 engine = create_engine(SQLALCHEMY_DATABASE_URI, module=sqlite)
 

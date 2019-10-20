@@ -3,7 +3,6 @@ import logging
 from flask import Flask, g
 from flask import render_template
 
-
 def create_app():
     """Construct the core application."""
     app = Flask(__name__)
@@ -47,10 +46,11 @@ def register_errorhandlers(app):
 
 def register_shellcontext(app):
     """Register shell context objects."""
+    from .database import engine
 
     def shell_context():
         """Shell context objects."""
-        return {}
+        return {"db": engine}
 
     app.shell_context_processor(shell_context)
 
