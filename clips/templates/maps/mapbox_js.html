@@ -1,0 +1,70 @@
+{% extends "layout.html" %}
+{% block css %}
+        <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+        <!--link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.4.1/mapbox-gl.css' rel='stylesheet' /-->
+        <link href='https://api.mapbox.com/mapbox.js/v3.2.1/mapbox.css' rel='stylesheet' />
+        <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v1.0.0/MarkerCluster.css' rel='stylesheet' />
+        <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v1.0.0/MarkerCluster.Default.css' rel='stylesheet' />
+
+        <script src='https://api.mapbox.com/mapbox.js/v3.2.1/mapbox.js'></script>
+        <!--script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.4.1/mapbox-gl.js'></script-->
+        <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v1.0.0/leaflet.markercluster.js'></script>
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <style>
+        body { margin:0; padding:0; }
+        #map-container {
+                margin: 100px 50px 50px 50px;
+                position: relative;
+                height: 400px;
+                width: 600px;
+        }
+        #map {
+                position: relative;
+                margin: inherit;
+                height: inherit;
+                width: inherit;
+        }
+        .marker {
+              border: none;
+              cursor: pointer;
+              height: 32px;
+              width: 32px;
+              background-image: url(static/marker.png);
+              background-color: rgba(0, 0, 0, 0);
+              transform: translate(28px, 56px, 0);
+            }
+        </style>
+{% endblock %}
+
+{% block content %}
+        <div id="map-container">
+            <div id="map"></div>
+        </div>
+{% endblock %}
+
+{% block js %}
+        <script>
+            L.mapbox.accessToken = '{{ACCESS_KEY}}';
+            var map = L.mapbox.map('map')
+            .setView({{coords}}, 9)
+            .addLayer(L.mapbox.styleLayer('mapbox://styles/mapbox/streets-v11'));
+
+            var markers = new L.MarkerClusterGroup();
+            var stop_locations = {{ markers|safe }}
+
+            for (var i = 0; i < stop_locations.length; i++) {
+                var a = stop_locations[i];
+
+                var coords = a.geometry.coordinates
+                var title = a.properties.title;
+                var marker = L.marker(new L.LatLng(coords[1], coords[0]), {
+                    icon: L.mapbox.marker.icon({'marker-symbol': 'post', 'marker-color': '0044FF'}),
+                    title: title
+                });
+                marker.bindPopup(title);
+                markers.addLayer(marker);
+            }
+            map.addLayer(markers);
+
+        </script>
+{% endblock %}
