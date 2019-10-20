@@ -4,6 +4,12 @@ SAAS platform to decrease carbon in the use of electricity
 
 ## Pre-requisite
 
+Generate locale
+```
+locale-gen en_US.UTF-8
+export LANG=en_US.UTF-8 LANGUAGE=en_US.en LC_ALL=en_US.UTF-8
+```
+
 Install spatialite for Sqlite 3
 
 ```

@@ -23,14 +23,50 @@ def df_to_geojson(df, properties, lat='lat', lon='lon'):
         geojson['features'].append(feature)
     return geojson
 
+def _format_title(row):
+    field_map = {"P": {"name": "Adress",
+                       "house_type": "House type",
+                       "logement_count": "Flat count",
+                       "p_panel_count": "Panel count",
+                       "north_azimut": "North azimut",
+                       "roof_shape": "Roof shape",
+                       "sunchine": "Shunsine"},
+                 "W": {"name": "Adress",
+                       "house_type": "House type",
+                       "logement_count": "Flat count",
+                       "w_panel_count": "Panel count",
+                       "north_azimut": "North azimut",
+                       "roof_shape": "Roof shape",
+                       "sunchine": "Shunsine"}
+                 }
+
+    nrj = row.get("energy") or "P"
+    if nrj == "P":
+        title =  "Energy: Photovoltaic<br />"
+    else:
+        title = "Energy: Solar hot water<br />"
+
+    title += '<br />'.join([f"{v}: {row[k]}" for k, v in field_map[nrj].items()])
+    return title
+
 
 def create_markers(df):
+    field_map = {"name": "Adress",
+                 "energy": "Energy",
+                 "house_type": "House type",
+                 "logement_count": "Flat count",
+                 "p_panel_count": "Photovoltaic panel count",
+                 "w_panel_count": "Hot water panel count",
+                 "north_azimut": "North azimut",
+                 "roof_shape": "Roof shape",
+                 "sunchine": "Shunsine"}
     stop_locations = []
     for _, row in df.iterrows():
         # Create a geojson object for stop location
         point = Point([row['lon'], row['lat']])
+
         properties = {
-            'title': row['name'],
+            'title': _format_title(row),
             'icon': 'campsite',
             'marker-color': '#3bb2d0',
             'marker-symbol': len(stop_locations) + 1
