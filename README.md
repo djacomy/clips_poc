@@ -30,14 +30,14 @@ or hot water on the roofs of individual houses are our priority targets:
 
 - Make cartographies in France of the Parisian cities (Grand Paris Seine and Oise, 
 Vernon, Palaiseau, Saclay, etc.) via umap and import markers in our database.
-- Provide the meam to see cartographies by cities for any consumer. 
+- Provide the meam to see cartographies by cities for any consumers. 
 
 ### V1
 
 - Create a register page to onboard on the project as consumer, producter and 
   Cities autorities. 
 - Create a consumer dashboard to view how green is this house area
-- Create a producter and Cities autorities dashord to pick on the map their 
+- Create a producter and Cities autorities dashoard to pick on the map their 
   production site and provide characteristic data. 
   
 ### V2
@@ -48,7 +48,7 @@ Vernon, Palaiseau, Saclay, etc.) via umap and import markers in our database.
   
 ### V3
 
-- With data collected and satellite image, help to recogize production site. 
+- With data collected and satellite image, help to recognize production site. 
 
 
 ### V4
