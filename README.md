@@ -95,6 +95,7 @@ pip install -r requirements.txt
 ```
 python manage.py init-db
 python manage.py migrate 20191020_create_marker.sql
+python manage.py migrate 20191020_2_create_map.sql
 ```
 
 ### Crawl markers
